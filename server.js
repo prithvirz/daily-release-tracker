@@ -96,6 +96,10 @@ function rateLimiter(req, res, next) {
  * Returns all movies and series releasing today (theatrical + OTT).
  */
 app.get("/api/today-releases", rateLimiter, async (req, res) => {
+  // Prevent browser/CDN caching of this time-sensitive endpoint
+  res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
   try {
     let dateParam = req.query.date;
     if (dateParam) {
@@ -158,20 +162,25 @@ app.get("*", (req, res) => {
 // Midnight Cache Clear
 // ---------------------------------------------------------------------------
 function scheduleMidnightClear() {
-  const now = new Date();
-  const midnight = new Date(now);
-  midnight.setHours(24, 0, 0, 0); // Next midnight (00:00)
+  // Compute IST midnight, not UTC midnight.
+  // istNow   = current time interpreted in Asia/Kolkata
+  // istToday = midnight floor of that date (IST)
+  const istNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  const istToday = new Date(istNow.getFullYear(), istNow.getMonth(), istNow.getDate());
+  const istMidnight = new Date(istToday);
+  istMidnight.setHours(24, 0, 0, 0); // Next IST midnight
 
-  const msUntilMidnight = midnight - now;
+  // Convert IST midnight back to UTC epoch so setTimeout fires at the right wall-clock instant
+  const nowUTC = Date.now();
+  const msUntilMidnight = istMidnight.getTime() - nowUTC;
 
   setTimeout(() => {
-    console.log("[Server] Midnight — clearing release cache...");
+    console.log("[Server] IST Midnight — clearing release cache...");
     cache.clearByPrefix("today-releases");
-    // Re-schedule for next midnight
     scheduleMidnightClear();
-  }, msUntilMidnight);
+  }, Math.max(msUntilMidnight, 1000));
 
-  console.log(`[Server] Midnight cache clear scheduled in ${Math.round(msUntilMidnight / 1000 / 60)} minutes`);
+  console.log(`[Server] IST midnight cache clear scheduled in ${Math.round(msUntilMidnight / 1000 / 60)} minutes`);
 }
 
 // ---------------------------------------------------------------------------
