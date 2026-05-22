@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: daily-release-tracker
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: node server.js
+    envVars:
+      - key: TMDB_API_KEY
+        sync: false
+    healthCheckPath: /api/health

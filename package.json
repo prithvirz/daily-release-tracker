@@ -1,0 +1,21 @@
+{
+  "name": "daily-release-tracker",
+  "version": "2.0.0",
+  "description": "Daily Indian Movie & Series Release Tracker — backed by TMDB API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
+  }
+}
